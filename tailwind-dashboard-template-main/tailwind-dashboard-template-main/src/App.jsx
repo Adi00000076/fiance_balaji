@@ -4,6 +4,7 @@ import { Routes, Route, useLocation } from "react-router-dom";
 import "./css/style.css";
 
 import "./charts/ChartjsConfig";
+import "./App.css"
 
 import routes from "./routes";
 import Layout from "./components/Layout";

@@ -1,0 +1,19 @@
+package com.balaji.finance.service;
+
+import org.springframework.stereotype.Service;
+
+@Service
+public class PersonalInfoService {
+	
+	// create
+public
+	// update
+
+	// delete
+
+	// findAll
+
+	// findBy
+	
+
+}

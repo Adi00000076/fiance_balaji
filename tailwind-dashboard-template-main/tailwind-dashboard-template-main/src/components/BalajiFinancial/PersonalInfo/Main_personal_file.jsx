@@ -1,8 +1,6 @@
 import React, { useState } from "react";
 import {
-  AppBar,
-  Toolbar,
-  Typography,
+
   Box,
   Tabs,
   Tab,
@@ -41,24 +39,7 @@ const Main_personal_file = () => {
           onChange={handleChange}
           centered
           aria-label="personal info tabs"
-          sx={{
-            "& .MuiTab-root": {
-              textTransform: "none",
-              fontWeight: 600,
-              fontSize: 15,
-              gap: 1,
-              flexDirection: "row",
-              px: 3,
-            },
-            "& .Mui-selected": {
-              color: "#1976d2",
-            },
-            "& .MuiTabs-indicator": {
-              backgroundColor: "#1976d2",
-              height: 4,
-              borderRadius: "4px 4px 0 0",
-            },
-          }}
+        
         >
           <Tab icon={<PersonIcon />} label="Customer" iconPosition="start" />
           <Tab icon={<WorkIcon />} label="Employee" iconPosition="start" />
