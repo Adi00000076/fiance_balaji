@@ -17,11 +17,17 @@ const Partner = lazy(() =>
 const Vender = lazy(() =>
   import("./components/BalajiFinancial/PersonalInfo/Vender/Vender")
 );
+const Login = lazy(() => import("./components/Authentication/Login"));
 
 const routes = [
   {
     path: "/",
     element: Dashboard,
+    exact: true,
+  },
+  {
+    path: "/login",
+    element: Login,
     exact: true,
   },
   {

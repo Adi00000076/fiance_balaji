@@ -158,7 +158,8 @@ function Sidebar({ sidebarOpen, setSidebarOpen, variant = "default" }) {
                           <li className="mb-1 last:mb-0">
                             <NavLink
                               end
-                              to=" dark:hover:text-gray-200 transition duration-150 truncate"
+                              to="/login"
+                              className="text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-gray-200 transition duration-150 truncate"
                             >
                               <span className="text-sm font-medium lg:opacity-0 lg:sidebar-expanded:opacity-100 2xl:opacity-100 duration-200">
                                 Sign in
@@ -168,7 +169,8 @@ function Sidebar({ sidebarOpen, setSidebarOpen, variant = "default" }) {
                           <li className="mb-1 last:mb-0">
                             <NavLink
                               end
-                              to=" dark:hover:text-gray-200 transition duration-150 truncate"
+                              to="#"
+                              className="text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-gray-200 transition duration-150 truncate"
                             >
                               <span className="text-sm font-medium lg:opacity-0 lg:sidebar-expanded:opacity-100 2xl:opacity-100 duration-200">
                                 Sign up
@@ -178,7 +180,8 @@ function Sidebar({ sidebarOpen, setSidebarOpen, variant = "default" }) {
                           <li className="mb-1 last:mb-0">
                             <NavLink
                               end
-                              to=" hover:text-gray-700 dark:hover:text-gray-200 transition duration-150 truncate"
+                              to="#"
+                              className="text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-gray-200 transition duration-150 truncate"
                             >
                               <span className="text-sm font-medium lg:opacity-0 lg:sidebar-expanded:opacity-100 2xl:opacity-100 duration-200">
                                 Reset Password
@@ -294,7 +297,21 @@ function Sidebar({ sidebarOpen, setSidebarOpen, variant = "default" }) {
                               className="text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-gray-200 transition duration-150 truncate"
                             >
                               <span className="text-sm font-medium lg:opacity-0 lg:sidebar-expanded:opacity-100 2xl:opacity-100 duration-200">
-                                Loans
+                                Account
+                              </span>
+                            </NavLink>
+                          </li>
+                        </ul>
+
+                        <ul className={`pl-8 mt-1 ${!open && "hidden"}`}>
+                          <li className="mb-1 last:mb-0">
+                            <NavLink
+                              to="/login"
+                              className="flex items-center text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-gray-200 transition duration-150 truncate py-1"
+                            >
+                              <Person className="w-4 h-4 mr-3" />
+                              <span className="text-sm font-medium lg:opacity-0 lg:sidebar-expanded:opacity-100 2xl:opacity-100 duration-200">
+                                Login
                               </span>
                             </NavLink>
                           </li>

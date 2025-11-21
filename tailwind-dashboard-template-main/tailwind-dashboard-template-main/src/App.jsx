@@ -4,10 +4,13 @@ import { Routes, Route, useLocation } from "react-router-dom";
 import "./css/style.css";
 
 import "./charts/ChartjsConfig";
-import "./App.css"
+import "./App.css";
 
 import routes from "./routes";
+import PrivateRoute from "./components/PrivateRoute";
 import Layout from "./components/Layout";
+
+import LoadingSpinner from "./LoadingSpinner";
 
 function App() {
   const location = useLocation();
@@ -20,16 +23,32 @@ function App() {
 
   return (
     <Layout>
-      <Suspense fallback={<div>Loading...</div>}>
+      <Suspense fallback={<LoadingSpinner />}>
         <Routes>
-          {routes.map((route, index) => (
-            <Route
-              key={index}
-              path={route.path}
-              element={<route.element />}
-              exact={route.exact}
-            />
-          ))}
+          {routes.map((route, index) => {
+            if (route.path === "/login") {
+              return (
+                <Route
+                  key={index}
+                  path={route.path}
+                  element={<route.element />}
+                  exact={route.exact}
+                />
+              );
+            }
+            return (
+              <Route
+                key={index}
+                path={route.path}
+                element={
+                  <PrivateRoute>
+                    <route.element />
+                  </PrivateRoute>
+                }
+                exact={route.exact}
+              />
+            );
+          })}
         </Routes>
       </Suspense>
     </Layout>

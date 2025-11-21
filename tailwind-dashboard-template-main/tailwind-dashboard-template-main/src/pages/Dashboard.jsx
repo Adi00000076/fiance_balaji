@@ -1,4 +1,6 @@
 import React from "react";
+import { useAuth } from "../utils/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 import FilterButton from "../components/DropdownFilter";
 import Datepicker from "../components/Datepicker";
@@ -17,6 +19,14 @@ import DashboardCard12 from "../partials/dashboard/DashboardCard12";
 import DashboardCard13 from "../partials/dashboard/DashboardCard13";
 
 function Dashboard() {
+  const { logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();
+    navigate("/login");
+  };
+
   return (
     <>
       {/* Dashboard actions */}
@@ -45,6 +55,13 @@ function Dashboard() {
               <path d="M15 7H9V1c0-.6-.4-1-1-1S7 .4 7 1v6H1c-.6 0-1 .4-1 1s.4 1 1 1h6v6c0 .6.4 1 1 1s1-.4 1-1V9h6c.6 0 1-.4 1-1s-.4-1-1-1z" />
             </svg>
             <span className="max-xs:sr-only">Add View</span>
+          </button>
+          {/* Logout button */}
+          <button
+            className="btn bg-red-600 text-white hover:bg-red-700 ml-2"
+            onClick={handleLogout}
+          >
+            Logout
           </button>
         </div>
       </div>

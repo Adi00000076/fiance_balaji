@@ -1,101 +1,107 @@
+// src/components/BalajiFinancial/PersonalInfo/Custmer/Custmer.jsx
 import React, { useEffect, useState } from "react";
 import {
   Box,
   Button,
-  CircularProgress,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
   Drawer,
   Grid,
-  IconButton,
-  Snackbar,
-  Switch,
   TextField,
-  MenuItem,
-  FormControlLabel,
-  Radio,
-  RadioGroup,
+  Paper,
+  Typography,
   FormControl,
   FormLabel,
-  Typography,
-  Alert,
-  alpha,
+  RadioGroup,
+  FormControlLabel,
+  Radio,
+  MenuItem,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  InputAdornment,
+  CircularProgress,
 } from "@mui/material";
 import { DataGrid } from "@mui/x-data-grid";
-import CloseIcon from "@mui/icons-material/Close";
-import AddIcon from "@mui/icons-material/Add";
-import EditIcon from "@mui/icons-material/Edit";
-import DeleteIcon from "@mui/icons-material/Delete";
-import SearchIcon from "@mui/icons-material/Search";
-import PhoneIcon from "@mui/icons-material/Phone";
-import HomeIcon from "@mui/icons-material/Home";
-import PersonIcon from "@mui/icons-material/Person";
 import axios from "axios";
 
-const defaultModel = {
-  id: 0,
-  firstname: "",
-  lastname: "",
-  gender: "Male",
-  fathername: "",
-  address: "",
-  mobile: "",
-  phone: "",
-  category: "",
-  reference: "",
-  idproof: "",
-  disable: false,
-  shares: 0,
-  loanlimit: 0,
-  address2: "",
-  mobile2: "",
-  phone2: "",
-  oldid: "",
-  age: "",
-  occupation: "",
-  spouse: "",
-  bussinessexemption: false,
-  introname: "",
+import {
+  FiUserPlus,
+  FiSearch,
+  FiPhone,
+  FiCopy,
+  FiSave,
+  FiX,
+  FiEdit,
+  FiTrash2,
+  FiXCircle,
+} from "react-icons/fi";
+import { MdClose } from "react-icons/md";
+import { successToast, errorToast } from "../../../../toastify";
+
+const API_BASE =
+  import.meta.env.VITE_API_BASE || "http://localhost:8881/balaji-finance";
+
+const TYPE_LABELS = {
+  CUSTOMER: "Customer",
+  EMPLOYEE: "Employee",
+  PARTNER: "Partner",
+  VENDOR: "Vendor",
 };
 
-const basePath = "/balaji-finance/PersonalInfo";
-
-const Customer = () => {
+const Custmer = ({ personType = "CUSTOMER" }) => {
   const [rows, setRows] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [filteredRows, setFilteredRows] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [search, setSearch] = useState("");
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [isEdit, setIsEdit] = useState(false);
-  const [form, setForm] = useState(defaultModel);
-  const [errors, setErrors] = useState({});
-
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [toDeleteId, setToDeleteId] = useState(null);
+  const [toDeleteId, setToDeleteId] = useState("");
 
-  const [snackbar, setSnackbar] = useState({
-    open: false,
-    message: "",
-    severity: "info",
+  const [form, setForm] = useState({
+    id: "",
+    firstname: "",
+    lastname: "",
+    fathername: "",
+    spouse: "",
+    gender: "Male",
+    age: "",
+    occupation: "",
+    address: "",
+    address2: "",
+    mobile: "",
+    mobile2: "",
+    phone: "",
+    reference: "",
+    idproof: "",
+    category: personType,
   });
 
-  const tempIdMap = new Map();
+  const [errors, setErrors] = useState({});
 
+  /* FETCH DATA */
   const fetchData = async () => {
     setLoading(true);
     try {
-      const res = await axios.get(`${basePath}/findAll`);
-      const data = Array.isArray(res.data) ? res.data : [];
-      setRows(data);
-      setFilteredRows(data);
+      const res = await axios.get(`${API_BASE}/PersonalInfo/findAll`);
+      console.log("Raw API Response:", res.data); // Debug log
+
+      let data = Array.isArray(res.data) ? res.data : [];
+      data = data.filter((item) => item.category === personType); // Filter by type
+
+      // Fix ID: use real ID or fallback safely
+      const safeData = data.map((item, index) => ({
+        ...item,
+        id: item.id || `BALAJI-${index}-${Date.now()}`, 
+        category: item.category || personType,
+      }));
+
+      console.log("Processed Rows:", safeData); // Final data sent to grid
+      setRows(safeData);
     } catch (err) {
-      setSnackbar({
-        open: true,
-        message: "Failed to load data",
-        severity: "error",
-      });
+      console.error("Fetch error:", err);
+      errorToast("Failed to load data");
     } finally {
       setLoading(false);
     }
@@ -103,262 +109,244 @@ const Customer = () => {
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [personType]);
 
   useEffect(() => {
-    if (!search.trim()) {
-      setFilteredRows(rows);
-      return;
-    }
-    const q = search.toLowerCase();
-    setFilteredRows(
-      rows.filter((row) =>
-        Object.values(row).some((val) =>
-          val?.toString().toLowerCase().includes(q)
-        )
-      )
+    const filtered = rows.filter(
+      (r) =>
+        (r.firstname || "").toLowerCase().includes(search.toLowerCase()) ||
+        (r.mobile || "").includes(search) ||
+        (r.id || "").includes(search)
     );
-  }, [search, rows]);
+    setFilteredRows(filtered);
+  }, [rows, search]);
 
-  const getStableId = (row) => {
-    if (row.id && row.id !== 0) return row.id;
-    const key = `${row.firstname}-${row.mobile}-${row.oldid}`;
-    if (!tempIdMap.has(key)) {
-      tempIdMap.set(
-        key,
-        `temp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+  /* OPEN ADD FORM */
+  const openAddForm = async () => {
+    setLoading(true);
+    try {
+      const res = await axios.get(
+        `${API_BASE}/PersonalInfo/createNewPersonalInfoTemplate/${personType}`
       );
+      setForm({
+        id: res.data.id || "",
+        firstname: "",
+        lastname: "",
+        fathername: "",
+        spouse: "",
+        gender: "Male",
+        age: "",
+        occupation: "",
+        address: "",
+        address2: "",
+        mobile: "",
+        mobile2: "",
+        phone: "",
+        reference: "",
+        idproof: "",
+        category: personType,
+      });
+      setErrors({});
+      setIsEdit(false);
+      setDrawerOpen(true);
+    } catch (err) {
+      console.error("Failed to generate ID:", err);
+      errorToast("Failed to generate ID");
+    } finally {
+      setLoading(false);
     }
-    return tempIdMap.get(key);
   };
 
-  const showSnackbar = (msg, type = "info") => {
-    setSnackbar({ open: true, message: msg, severity: type });
+  /* INPUT CHANGE - Fixed syntax */
+  const handleChange = (field, value) => {
+    if (["mobile", "mobile2", "phone"].includes(field)) {
+      value = value.replace(/\D/g, "").slice(0, 10);
+    }
+    if (field === "age") {
+      value = value === "" ? "" : Math.max(0, parseInt(value) || 0).toString();
+    }
+
+    setForm((prev) => ({ ...prev, [field]: value }));
+
+    // Live validation
+    if (field === "mobile") {
+      if (!value) {
+        setErrors((prev) => ({ ...prev, mobile: "Mobile is required" }));
+      } else if (value.length !== 10) {
+        setErrors((prev) => ({ ...prev, mobile: "Must be 10 digits" }));
+      } else {
+        setErrors((prev) => ({ ...prev, mobile: undefined }));
+      }
+    }
+    if (field === "firstname" && value.trim()) {
+      setErrors((prev) => ({ ...prev, firstname: undefined }));
+    }
   };
 
+  /* VALIDATION */
   const validateForm = () => {
     const newErrors = {};
-    if (!form.firstname.trim()) newErrors.firstname = "First name required";
-    if (!form.mobile.trim()) {
-      newErrors.mobile = "Mobile required";
-    } else if (!/^\d{10}$/.test(form.mobile)) {
-      newErrors.mobile = "Exactly 10 digits";
-    }
-    if (form.phone && !/^\d{10}$/.test(form.phone))
-      newErrors.phone = "10 digits only";
-    if (form.mobile2 && !/^\d{10}$/.test(form.mobile2))
-      newErrors.mobile2 = "10 digits only";
-    if (form.phone2 && !/^\d{10}$/.test(form.phone2))
-      newErrors.phone2 = "10 digits only";
-
+    if (!form.firstname?.trim()) newErrors.firstname = "First Name is required";
+    if (!form.mobile) newErrors.mobile = "Mobile is required";
+    else if (form.mobile.length !== 10) newErrors.mobile = "Must be 10 digits";
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleChange = (field, value) => {
-    if (["mobile", "phone", "mobile2", "phone2"].includes(field)) {
-      value = value.replace(/\D/g, "").slice(0, 10);
-    }
-    if (["shares", "loanlimit", "age"].includes(field)) {
-      value = value === "" ? 0 : Number(value);
-    }
-    setForm((prev) => ({ ...prev, [field]: value }));
-    if (errors[field]) setErrors((prev) => ({ ...prev, [field]: null }));
-  };
-
+  /* SUBMIT */
   const handleSubmit = async () => {
     if (!validateForm()) return;
-
+    setSaving(true);
     try {
-      if (isEdit) {
-        await axios.put(`${basePath}/updatePersonalInfo`, form);
-        showSnackbar("Customer updated successfully", "success");
-      } else {
-        await axios.post(`${basePath}/savePersonalInfo`, form);
-        showSnackbar("Customer created successfully", "success");
-      }
+      await axios.post(`${API_BASE}/PersonalInfo/updatePersonalInfo`, {
+        ...form,
+        category: personType,
+      });
+      successToast(`${isEdit ? "Updated" : "Added"} successfully!`);
       setDrawerOpen(false);
       fetchData();
-      setForm(defaultModel);
-      setErrors({});
     } catch (err) {
-      showSnackbar(err.response?.data?.message || "Save failed", "error");
+      errorToast(err.response?.data?.message || "Save failed");
+    } finally {
+      setSaving(false);
     }
   };
 
+  /* DELETE */
   const handleDelete = async () => {
     try {
-      await axios.delete(`${basePath}/deletePersonalInfo/${toDeleteId}`);
-      showSnackbar("Deleted successfully", "success");
+      await axios.delete(`${API_BASE}/PersonalInfo/deletePersonalInfo`, {
+        data: { id: toDeleteId },
+      });
+      successToast("Deleted successfully");
       fetchData();
     } catch (err) {
-      showSnackbar("Delete failed", "error");
+      errorToast("Delete failed");
     } finally {
       setDeleteDialogOpen(false);
-      setToDeleteId(null);
     }
+  };
+
+  /* COPY ID */
+  const copyId = () => {
+    navigator.clipboard.writeText(form.id || "N/A");
+    successToast("ID copied!");
   };
 
   const columns = [
     {
       field: "actions",
       headerName: "Actions",
-      width: 110,
+      width: 180, // a bit wider so the Delete button fits nicely
+      sortable: false,
+      filterable: false,
       renderCell: (params) => (
-        <Box sx={{ display: "flex", gap: 1 }}>
-          <IconButton
+        <Box
+          sx={{ display: "flex", gap: 1, alignItems: "center", height: "100%" }}
+        >
+          {/* Edit Button */}
+          <Button
             size="small"
+            variant="outlined"
             color="primary"
+            startIcon={<FiEdit />}
             onClick={() => {
-              setIsEdit(true);
               setForm(params.row);
-              setErrors({});
+              setIsEdit(true);
               setDrawerOpen(true);
             }}
           >
-            <EditIcon fontSize="small" />
-          </IconButton>
-          <IconButton
+            Edit
+          </Button>
+
+          {/* Delete Button */}
+          <Button
             size="small"
+            variant="outlined"
             color="error"
+            startIcon={<FiTrash2 />}
             onClick={() => {
-              setToDeleteId(getStableId(params.row));
+              setToDeleteId(params.row.id);
               setDeleteDialogOpen(true);
             }}
           >
-            <DeleteIcon fontSize="small" />
-          </IconButton>
-        </Box>
-      ),
-    },
-    { field: "id", headerName: "ID", width: 80 },
-    { field: "firstname", headerName: "First Name", width: 160 },
-    // { field: "lastname", headerName: "Last Name", width: 160 },
-    // { field: "gender", headerName: "Gender", width: 100 },
-    { field: "mobile", headerName: "Mobile", width: 140 },
-    { field: "address", headerName: "Address", width: 300, flex: 1 },
-    // { field: "category", headerName: "Category", width: 130 },
-    { field: "shares", headerName: "Shares", width: 110 },
-    { field: "loanlimit", headerName: "Loan Limit", width: 130 },
-    {
-      field: "disable",
-      headerName: "Status",
-      width: 160,
-      renderCell: (p) => (
-        <Box
-          sx={{
-          
-
-          }}
-        >
-                <Button
-            variant="outlined"
-            size="small"
-            sx={{
-              fontWeight: 600,
-              color: p.value ? "error.main" : "success.main",
-            }}
-          >
-            {p.value ? "Disabled" : "Active"}
-  
-
-        
+            Delete
           </Button>
         </Box>
       ),
     },
+    { field: "id", headerName: "ID", width: 160 },
+    { field: "firstname", headerName: "First Name", width: 160 },
+    { field: "lastname", headerName: "Last Name", width: 140 },
+    { field: "mobile", headerName: "Mobile", width: 140 },
+    { field: "address", headerName: "Address", flex: 1 },
   ];
 
   return (
-    <Box sx={{ p: 1, bgcolor: "white", minHeight: "100vh" }}>
+    <Box sx={{ bgcolor: "#f9fafb", minHeight: "100vh",mt:2 }}>
       {/* Header */}
       <Box
         sx={{
-          mb: 4,
+          mb: 3,
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-          width: "100%",
         }}
       >
-        {/* LEFT - Heading */}
         <Box>
           <Typography variant="h5" fontWeight="bold">
-            Customer
-          </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-            Total Records: {filteredRows.length}
+            {TYPE_LABELS[personType]}s
           </Typography>
         </Box>
 
-        {/* CENTER - Search */}
-        <Box
-          sx={{ flexGrow: 1, display: "flex", justifyContent: "center", px: 3 }}
-        >
+        <Box>
+          <Typography variant="body2" color="text.primary">
+            Total: {filteredRows.length}
+          </Typography>
+        </Box>
+        <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
           <TextField
             size="small"
-            placeholder="Search by name, mobile, address..."
+            placeholder="Search..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            sx={{ width: "400px" }}
+            sx={{ width: 320 }}
             InputProps={{
               startAdornment: (
-                <SearchIcon sx={{ mr: 1, color: "text.secondary" }} />
+                <FiSearch style={{ marginRight: 8, color: "#666" }} />
               ),
             }}
           />
+          <Button
+            variant="contained"
+            startIcon={<FiUserPlus />}
+            onClick={openAddForm}
+          >
+            Add {TYPE_LABELS[personType]}
+          </Button>
         </Box>
-
-        {/* RIGHT - Add Button */}
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={() => {
-            setIsEdit(false);
-            setForm(defaultModel);
-            setErrors({});
-            setDrawerOpen(true);
-          }}
-        >
-          Add
-        </Button>
       </Box>
 
-      {/* Data Table */}
-      <Box
-        sx={{
-          height: 400,
-          width: "100%",
-          bgcolor: "white",
-          borderRadius: 3,
-          boxShadow: 3,
-        }}
-      >
+      {/* DataGrid */}
+      <Paper elevation={3} sx={{ height: 680 }}>
         <DataGrid
           rows={filteredRows}
           columns={columns}
           loading={loading}
-          getRowId={getStableId}
+          getRowId={(row) => row.id}
           pageSizeOptions={[10, 25, 50, 100]}
-          paginationModel={{ page: 0, pageSize: 15 }}
+          pagination
           disableRowSelectionOnClick
         />
-      </Box>
+      </Paper>
 
-      {/* Full Form Drawer */}
-
+      {/* Drawer Form - Same Perfect Layout */}
       <Drawer
         anchor="right"
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
       >
-        <Box
-          sx={{
-            width: { xs: "100vw", sm: 600 },
-            p: { xs: 3, md: 5 },
-            bgcolor: "#f8fafc",
-          }}
-        >
+        <Box sx={{ width: { xs: "100vw", sm: 600 }, p: 4, pb: 4 }}>
           {/* Header */}
           <Box
             sx={{
@@ -368,298 +356,262 @@ const Customer = () => {
               mb: 4,
             }}
           >
-            <Typography variant="h6" fontWeight="bold" color="primary">
-              {isEdit ? "Edit Customer" : "Add New Customer"}
+            <Typography variant="h5" fontWeight="bold" color="primary">
+              {isEdit ? "Edit" : "Add New"} {TYPE_LABELS[personType]}
             </Typography>
-            <IconButton
-              onClick={() => setDrawerOpen(false)}
-              size="large"
-              sx={{
-                bgcolor: "grey.100",
-                "&:hover": { bgcolor: "grey.200" },
-              }}
-            >
-              <CloseIcon />
-            </IconButton>
+            <Button onClick={() => setDrawerOpen(false)} sx={{ minWidth: 40 }}>
+              <MdClose size={28} />
+            </Button>
           </Box>
 
-          {/* Form - Strictly 2 Columns per Row */}
+          {/* Customer ID (Only in Edit Mode) */}
+          {isEdit && (
+            <Paper
+              elevation={0}
+              sx={{ p: 2, bgcolor: "#f8f9fa", borderRadius: 2, mb: 4 }}
+            >
+              <TextField
+                fullWidth
+                label="Customer ID"
+                value={form.id || "N/A"}
+                disabled
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <Button
+                        size="small"
+                        startIcon={<FiCopy />}
+                        onClick={copyId}
+                      >
+                        Copy
+                      </Button>
+                    </InputAdornment>
+                  ),
+                }}
+              />
+            </Paper>
+          )}
+
           <Grid container spacing={3}>
             {/* Row 1 */}
-            <Grid item xs={12} sm={6}>
+            <Grid item xs={12} sm={4}>
               <TextField
-                sx={{ width: 230 }}
-                fullWidth
-                label="First Name *"
+                variant="outlined"
+                label="First Name"
                 required
+                fullWidth
                 value={form.firstname}
                 onChange={(e) => handleChange("firstname", e.target.value)}
-                error={!!errors.firstname}
-                helperText={errors.firstname}
               />
             </Grid>
-            <Grid item xs={12} sm={6}>
+
+            <Grid item xs={12} sm={4}>
               <TextField
-                sx={{ width: 230 }}
-                fullWidth
+                variant="outlined"
                 label="Last Name"
                 required
+                fullWidth
                 value={form.lastname}
                 onChange={(e) => handleChange("lastname", e.target.value)}
-                error={!!errors.lastname}
-                helperText={errors.lastname}
               />
             </Grid>
 
-            {/* Row 2 */}
-            <Grid item xs={12} sm={6} sx={{ width: 230 }}>
-              <FormControl component="fieldset">
-                <FormLabel component="legend">Gender</FormLabel>
-                <RadioGroup
-                  row
-                  value={form.gender || "Male"}
-                  onChange={(e) => handleChange("gender", e.target.value)}
-                >
-                  <FormControlLabel
-                    value="Male"
-                    control={<Radio />}
-                    label="Male"
-                  />
-                  <FormControlLabel
-                    value="Female"
-                    control={<Radio />}
-                    label="Female"
-                  />
-                </RadioGroup>
-              </FormControl>
-            </Grid>
-
-            <Grid item xs={12} sm={6}>
+            <Grid item xs={12} sm={4}>
               <TextField
-                fullWidth
-                sx={{ width: 230 }}
+                variant="outlined"
                 label="Father's / Husband's Name"
+                required
+                fullWidth
                 value={form.fathername}
                 onChange={(e) => handleChange("fathername", e.target.value)}
               />
             </Grid>
 
-            {/* Row 3 */}
-            <Grid item xs={12} sm={6} sx={{ width: 230 }}>
-              <TextField
-                fullWidth
-                sx={{ width: 230 }}
-                label="Mobile *"
-                value={form.mobile}
-                onChange={(e) => handleChange("mobile", e.target.value)}
-                error={!!errors.mobile}
-                helperText={errors.mobile || "Exactly 10 digits"}
-                inputProps={{ maxLength: 10 }}
-                InputProps={{
-                  startAdornment: (
-                    <PhoneIcon sx={{ color: "text.secondary", mr: 1 }} />
-                  ),
-                }}
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="Alternate Mobile"
-                value={form.mobile2}
-                onChange={(e) => handleChange("mobile2", e.target.value)}
-                inputProps={{ maxLength: 10 }}
-              />
-            </Grid>
-
-            {/* Row 4 */}
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                sx={{ width: 230 }}
-                label="Phone"
-                value={form.phone}
-                onChange={(e) => handleChange("phone", e.target.value)}
-                inputProps={{ maxLength: 10 }}
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                sx={{ width: 230 }}
-                label="Alternate Phone"
-                value={form.phone2}
-                onChange={(e) => handleChange("phone2", e.target.value)}
-                inputProps={{ maxLength: 10 }}
-              />
-            </Grid>
-
-            {/* Row 5 - Address Line 1 (Full Width) */}
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                sx={{ width: 230 }}
-                label="Address"
-                value={form.address}
-                onChange={(e) => handleChange("address", e.target.value)}
-                multiline
-              />
-            </Grid>
-
-            {/* Row 6 */}
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                sx={{ width: 230 }}
-                label="Address Line 2"
-                value={form.address2}
-                onChange={(e) => handleChange("address2", e.target.value)}
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                select
-                sx={{ width: 230 }}
-                fullWidth
-                label="Category"
-                value={form.category}
-                onChange={(e) => handleChange("category", e.target.value)}
-              >
-                <MenuItem value="">
-                  <em>None</em>
-                </MenuItem>
-                <MenuItem value="General">General</MenuItem>
-                <MenuItem value="Staff">Staff</MenuItem>
-                <MenuItem value="VIP">VIP</MenuItem>
-                <MenuItem value="NRI">NRI</MenuItem>
-              </TextField>
-            </Grid>
-
-            {/* Row 7 */}
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                sx={{ width: 230 }}
-                label="Reference"
-                value={form.reference}
-                onChange={(e) => handleChange("reference", e.target.value)}
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                sx={{ width: 230 }}
-                label="ID Proof (Aadhaar/PAN etc)"
-                value={form.idproof}
-                onChange={(e) => handleChange("idproof", e.target.value)}
-              />
-            </Grid>
-
-            {/* Row 8 */}
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="Old ID (if any)"
-                value={form.oldid}
-                onChange={(e) => handleChange("oldid", e.target.value)}
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                sx={{ width: 230 }}
-                fullWidth
-                label="Introducer Name"
-                value={form.introname}
-                onChange={(e) => handleChange("introname", e.target.value)}
-              />
-            </Grid>
-
-            {/* Row 9 */}
+            {/* Row 2 */}
             <Grid item xs={12} sm={4}>
               <TextField
+                variant="outlined"
+                label="Spouse Name (if applicable)"
+                required
                 fullWidth
-                sx={{ width: 230 }}
-                label="Shares"
-                type="number"
-                value={form.shares}
-                onChange={(e) => handleChange("shares", e.target.value)}
-              />
-            </Grid>
-            <Grid item xs={12} sm={4}>
-              <TextField
-                sx={{ width: 230 }}
-                fullWidth
-                label="Loan Limit"
-                type="number"
-                value={form.loanlimit}
-                onChange={(e) => handleChange("loanlimit", e.target.value)}
-              />
-            </Grid>
-            <Grid item xs={12} sm={4}>
-              <TextField
-                fullWidth
-                sx={{ width: 230 }}
-                label="Age"
-                type="number"
-                value={form.age}
-                onChange={(e) => handleChange("age", e.target.value)}
-              />
-            </Grid>
-
-            {/* Row 10 */}
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                sx={{ width: 230 }}
-                label="Occupation"
-                value={form.occupation}
-                onChange={(e) => handleChange("occupation", e.target.value)}
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                sx={{ width: 230 }}
-                label="Spouse Name"
                 value={form.spouse}
                 onChange={(e) => handleChange("spouse", e.target.value)}
               />
             </Grid>
 
-            {/* Row 11 - Switches */}
             <Grid item xs={12} sm={6}>
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={form.disable}
-                    onChange={(e) => handleChange("disable", e.target.checked)}
-                  />
-                }
-                label="Disable Customer"
+              <TextField
+                select
+                variant="outlined"
+                label="Gender"
+                required
+                fullWidth
+                value={form.gender}
+                onChange={(e) => handleChange("gender", e.target.value)}
+              >
+                <MenuItem value="Male">Male</MenuItem>
+                <MenuItem value="Female">Female</MenuItem>
+                <MenuItem value="Other">Other</MenuItem>
+              </TextField>
+            </Grid>
+
+            <Grid item xs={12} sm={6}>
+              <TextField
+                variant="outlined"
+                label="Age"
+                type="number"
+                required
+                fullWidth
+                sx={{ width: 120 }}
+                value={form.age}
+                onChange={(e) => handleChange("age", e.target.value)}
+                InputProps={{ inputProps: { min: 18, max: 100 } }}
               />
             </Grid>
+
+            <Grid item xs={12} sm={4}>
+              <TextField
+                select
+                variant="outlined"
+                label="ID Proof Type"
+                required
+                sx={{ width: 220 }}
+                fullWidth
+                value={form.idprooftype || "Aadhaar Card"}
+                onChange={(e) => handleChange("idprooftype", e.target.value)}
+              >
+                <MenuItem value="Aadhaar Card">Aadhaar Card</MenuItem>
+                <MenuItem value="PAN Card">PAN Card</MenuItem>
+                <MenuItem value="Voter ID">Voter ID</MenuItem>
+                <MenuItem value="Driving License">Driving License</MenuItem>
+                <MenuItem value="Passport">Passport</MenuItem>
+                <MenuItem value="Other">Other</MenuItem>
+              </TextField>
+            </Grid>
+
+            {/* Row 3 */}
             <Grid item xs={12} sm={6}>
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={form.bussinessexemption}
-                    onChange={(e) =>
-                      handleChange("bussinessexemption", e.target.checked)
-                    }
-                  />
+              <TextField
+                variant="outlined"
+                label="Occupation"
+                required
+                fullWidth
+                value={form.occupation}
+                onChange={(e) => handleChange("occupation", e.target.value)}
+              />
+            </Grid>
+
+            <Grid item xs={12} sm={4}>
+              <TextField
+                variant="outlined"
+                label="ID Proof Number"
+                required
+                fullWidth
+                value={form.idproof}
+                onChange={(e) => handleChange("idproof", e.target.value)}
+                placeholder={
+                  form.idprooftype?.includes("Aadhaar")
+                    ? "1234 5678 9012"
+                    : "Enter ID number"
                 }
-                label="Business Exemption"
+              />
+            </Grid>
+
+            {/* Row 4 - Addresses */}
+            <Grid item xs={12} sm={6}>
+              <TextField
+                sx={{ width: 225 }}
+                variant="outlined"
+                fullWidth
+                required
+                label="Residential Address"
+                multiline
+                value={form.address}
+                onChange={(e) => handleChange("address", e.target.value)}
+              />
+            </Grid>
+
+            <Grid item xs={12} sm={4}>
+              <TextField
+                variant="outlined"
+                sx={{ width: 225 }}
+                fullWidth
+                required
+                label="Office / Alternate Address"
+                multiline
+                value={form.address2}
+                onChange={(e) => handleChange("address2", e.target.value)}
+              />
+            </Grid>
+
+            <Grid item xs={12} sm={6}>
+              <TextField
+                variant="outlined"
+                fullWidth
+                required
+                label="Reference By "
+                value={form.reference}
+                onChange={(e) => handleChange("reference", e.target.value)}
+                placeholder="e.g. Referred by Mr. Sharma"
+              />
+            </Grid>
+
+            {/* Row 5 - Contact Numbers */}
+            <Grid item xs={12} sm={4}>
+              <TextField
+                variant="outlined"
+                fullWidth
+                required
+                label="Primary Mobile Number"
+                value={form.mobile}
+                onChange={(e) => handleChange("mobile", e.target.value)}
+              />
+            </Grid>
+
+            <Grid item xs={12} sm={4}>
+              <TextField
+                variant="outlined"
+                fullWidth
+                required
+                label="Alternate Mobile Number"
+                value={form.mobile2}
+                onChange={(e) => handleChange("mobile2", e.target.value)}
+              />
+            </Grid>
+
+            <Grid item xs={12} sm={4}>
+              <TextField
+                variant="outlined"
+                fullWidth
+                required
+                type="text"
+                label="Landline / Residence Number (Optional)"
+                value={form.phone}
+                onChange={(e) => handleChange("phone", e.target.value)}
               />
             </Grid>
           </Grid>
 
           {/* Action Buttons */}
           <Box
-            sx={{ mt: 6, display: "flex", justifyContent: "flex-end", gap: 2 }}
+            sx={{
+              mt: 6,
+              pt: 4,
+              borderTop: 1,
+              borderColor: "divider",
+              display: "flex",
+              justifyContent: "flex-end",
+              gap: 2,
+              position: "sticky",
+              bottom: 0,
+              bgcolor: "background.paper",
+              zIndex: 1,
+            }}
           >
             <Button
               variant="outlined"
               size="large"
+              startIcon={<FiXCircle />}
               onClick={() => setDrawerOpen(false)}
             >
               Cancel
@@ -667,23 +619,25 @@ const Customer = () => {
             <Button
               variant="contained"
               size="large"
+              startIcon={saving ? <CircularProgress size={20} /> : <FiSave />}
               onClick={handleSubmit}
+              disabled={saving}
               sx={{ minWidth: 140 }}
             >
-              {isEdit ? "Update Customer" : "Save Customer"}
+              {saving ? "Saving..." : isEdit ? "Update" : "Save Customer"}
             </Button>
           </Box>
         </Box>
       </Drawer>
 
-      {/* Delete Confirm Dialog */}
+      {/* Delete Dialog */}
       <Dialog
         open={deleteDialogOpen}
         onClose={() => setDeleteDialogOpen(false)}
       >
-        <DialogTitle>Delete Customer?</DialogTitle>
+        <DialogTitle>Confirm Delete</DialogTitle>
         <DialogContent>
-          <Typography>This action cannot be undone.</Typography>
+          <Typography>Are you sure you want to delete this record?</Typography>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
@@ -692,20 +646,8 @@ const Customer = () => {
           </Button>
         </DialogActions>
       </Dialog>
-
-      {/* Snackbar */}
-      <Snackbar
-        open={snackbar.open}
-        autoHideDuration={4000}
-        onClose={() => setSnackbar({ ...snackbar, open: false })}
-        anchorOrigin={{ vertical: "top", horizontal: "center" }}
-      >
-        <Alert severity={snackbar.severity} variant="filled">
-          {snackbar.message}
-        </Alert>
-      </Snackbar>
     </Box>
   );
 };
 
-export default Customer;
+export default Custmer;
