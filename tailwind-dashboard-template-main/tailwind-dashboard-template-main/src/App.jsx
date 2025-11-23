@@ -21,38 +21,43 @@ function App() {
     document.querySelector("html").style.scrollBehavior = "";
   }, [location.pathname]); // triggered on route change
 
-  return (
-    <Layout>
-      <Suspense fallback={<LoadingSpinner />}>
-        <Routes>
-          {routes.map((route, index) => {
-            if (route.path === "/login") {
-              return (
-                <Route
-                  key={index}
-                  path={route.path}
-                  element={<route.element />}
-                  exact={route.exact}
-                />
-              );
-            }
+  // Render login (and other public routes) without the app chrome/layout
+  const isAuthRoute =
+    location.pathname === "/login" || location.pathname === "/unauthorized";
+
+  const routesTree = (
+    <Suspense fallback={<LoadingSpinner />}>
+      <Routes>
+        {routes.map((route, index) => {
+          if (route.path === "/login" || route.public) {
             return (
               <Route
                 key={index}
                 path={route.path}
-                element={
-                  <PrivateRoute>
-                    <route.element />
-                  </PrivateRoute>
-                }
+                element={<route.element />}
                 exact={route.exact}
               />
             );
-          })}
-        </Routes>
-      </Suspense>
-    </Layout>
+          }
+
+          return (
+            <Route
+              key={index}
+              path={route.path}
+              element={
+                <PrivateRoute allowedRoles={route.roles}>
+                  <route.element />
+                </PrivateRoute>
+              }
+              exact={route.exact}
+            />
+          );
+        })}
+      </Routes>
+    </Suspense>
   );
+
+  return isAuthRoute ? routesTree : <Layout>{routesTree}</Layout>;
 }
 
 export default App;

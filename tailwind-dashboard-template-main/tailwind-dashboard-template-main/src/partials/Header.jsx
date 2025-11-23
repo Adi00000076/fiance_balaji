@@ -34,7 +34,10 @@ function Header({
         >
           {/* Header: Left side */}
           <div className="flex">
-            {/* Hamburger button */} <h2 className="text-primary">SRI BALAJI FINANCE </h2>
+            <h2 className="text-2xl font-bold text-success border-b-2 border-primary pb-1 inline-block">
+              SRI BALAJI FINANCE
+            </h2>
+
             <button
               className="text-gray-500 hover:text-gray-600 dark:hover:text-gray-400 lg:hidden"
               aria-controls="sidebar"

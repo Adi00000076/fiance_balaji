@@ -283,7 +283,7 @@ const Employe = ({ personType = "EMPLOYEE" }) => {
   ];
 
   return (
-    <Box sx={{ bgcolor: "#f9fafb", minHeight: "100vh", mt: 2 }}>
+    <Box sx={{ bgcolor: "background.default", minHeight: "100vh", mt: 2 }}>
       {/* Header */}
       <Box
         sx={{
@@ -328,7 +328,7 @@ const Employe = ({ personType = "EMPLOYEE" }) => {
       </Box>
 
       {/* DataGrid */}
-      <Paper elevation={3} sx={{ height: 680 }}>
+      <Paper elevation={3} sx={{ height: 680, bgcolor: "background.paper" }}>
         <DataGrid
           rows={filteredRows}
           columns={columns}
@@ -337,6 +337,13 @@ const Employe = ({ personType = "EMPLOYEE" }) => {
           pageSizeOptions={[10, 25, 50, 100]}
           pagination
           disableRowSelectionOnClick
+          sx={{
+            height: "100%",
+            bgcolor: "background.paper",
+            color: "text.primary",
+            '& .MuiDataGrid-columnHeaders': { bgcolor: 'background.default' },
+            '& .MuiDataGrid-virtualScroller': { bgcolor: 'background.paper' },
+          }}
         />
       </Paper>
 
@@ -368,7 +375,7 @@ const Employe = ({ personType = "EMPLOYEE" }) => {
           {isEdit && (
             <Paper
               elevation={0}
-              sx={{ p: 2, bgcolor: "#f8f9fa", borderRadius: 2, mb: 4 }}
+              sx={{ p: 2, bgcolor: "background.paper", borderRadius: 2, mb: 4 }}
             >
               <TextField
                 fullWidth

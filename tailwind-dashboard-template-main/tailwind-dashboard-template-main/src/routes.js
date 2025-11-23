@@ -18,16 +18,25 @@ const Vender = lazy(() =>
   import("./components/BalajiFinancial/PersonalInfo/Vender/Vender")
 );
 const Login = lazy(() => import("./components/Authentication/Login"));
+const Unauthorized = lazy(() => import("./components/Unauthorized"));
 
 const routes = [
   {
     path: "/",
     element: Dashboard,
+    roles: ["user", "admin"],
     exact: true,
   },
   {
     path: "/login",
     element: Login,
+    public: true,
+    exact: true,
+  },
+  {
+    path: "/unauthorized",
+    element: Unauthorized,
+    public: true,
     exact: true,
   },
   {

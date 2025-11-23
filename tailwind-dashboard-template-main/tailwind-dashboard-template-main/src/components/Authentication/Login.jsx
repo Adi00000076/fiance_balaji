@@ -1,288 +1,234 @@
 import React, { useState } from "react";
 import { useAuth } from "../../utils/AuthContext";
+import { useNavigate } from "react-router-dom";
+
 import {
   Box,
   Paper,
   TextField,
   Button,
   Typography,
-  Container,
   Avatar,
   CssBaseline,
   Grid,
-  Link,
-  Alert,
   CircularProgress,
   InputAdornment,
   IconButton,
 } from "@mui/material";
+
 import {
   LockOutlined as LockOutlinedIcon,
-  Email as EmailIcon,
+  AccountCircle as AccountCircleIcon,
   Lock as LockIcon,
   Visibility,
   VisibilityOff,
 } from "@mui/icons-material";
+
+import shribalajifinance from "../../images/shri-balaji-finance.png";
+
+// FULL BACKGROUND IMAGE
+import leftSideImage from "../../images/left-bg.jpg";
+
 import { createTheme, ThemeProvider } from "@mui/material/styles";
 import { successToast, errorToast } from "../../toastify";
 
+const API_BASE =
+  import.meta.env.VITE_API_BASE || "http://localhost:8881/balaji-finance";
+
 const theme = createTheme({
   palette: {
-    primary: {
-      main: "#1976d2",
-    },
-    secondary: {
-      main: "#dc004e",
-    },
+    primary: { main: "#0ea5a0" },
+    text: { primary: "#0f172a" },
+  },
+  typography: {
+    fontFamily: "'Inter', sans-serif",
+    h4: { fontWeight: 700 },
   },
 });
 
 const Login = () => {
   const { login } = useAuth();
-  const [formData, setFormData] = useState({
-    email: "",
-    password: "",
-  });
+  const navigate = useNavigate();
+
+  const [formData, setFormData] = useState({ username: "", password: "" });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
   const handleChange = (field) => (event) => {
-    setFormData({
-      ...formData,
-      [field]: event.target.value,
-    });
-    // Clear error when user starts typing
-    if (errors[field]) {
-      setErrors({
-        ...errors,
-        [field]: "",
-      });
-    }
+    setFormData((prev) => ({ ...prev, [field]: event.target.value }));
+    if (errors[field]) setErrors((prev) => ({ ...prev, [field]: "" }));
   };
 
   const validateForm = () => {
     const newErrors = {};
-
-    // Email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!formData.email.trim()) {
-      newErrors.email = "Email is required";
-    } else if (!emailRegex.test(formData.email)) {
-      newErrors.email = "Please enter a valid email address";
-    }
-
-    // Password validation
-    if (!formData.password) {
-      newErrors.password = "Password is required";
-    } else if (formData.password.length < 6) {
-      newErrors.password = "Password must be at least 6 characters";
-    }
-
+    if (!formData.username) newErrors.username = "Username is required";
+    if (!formData.password) newErrors.password = "Password is required";
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = async (event) => {
-    event.preventDefault();
-
-    if (!validateForm()) {
-      return;
-    }
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!validateForm()) return;
 
     setLoading(true);
 
     try {
-      // Simulate API call - replace with actual authentication logic
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      const resp = await fetch(`${API_BASE}/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: formData.username,
+          password: formData.password,
+        }),
+      });
 
-      // For demo purposes, accept any email/password combination
-      // In real app, this would be an API call to authenticate user
-      if (formData.email && formData.password) {
-        successToast("Login successful!");
-        login();
+      const data = await resp.json();
+
+      if (resp.ok && (data.token || data.user)) {
+        const token = data.token || data.accessToken;
+        if (token) localStorage.setItem("token", token);
+
+        login({
+          name: data.name || data.user?.name || formData.username,
+          role: data.role || "user",
+          token,
+        });
+
+        successToast("Login Successful");
+        navigate("/", { replace: true });
       } else {
-        throw new Error("Invalid credentials");
+        errorToast(data.message || "Invalid credentials");
       }
     } catch (error) {
-      errorToast(error.message || "Login failed. Please try again.");
+      errorToast("Login failed!");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleClickShowPassword = () => {
-    setShowPassword(!showPassword);
-  };
-
-  const handleMouseDownPassword = (event) => {
-    event.preventDefault();
-  };
-
   return (
     <ThemeProvider theme={theme}>
-      <Container component="main" maxWidth="sm">
-        <CssBaseline />
-        <Box
+      <CssBaseline />
+
+      {/* FULL BACKGROUND */}
+      <Box
+        sx={{
+          height: "100vh",
+          width: "100vw",
+          background: `url(${leftSideImage})`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "flex-end", // 👈 MOVE CARD RIGHT
+          pr: 2, // 👈 small padding on right
+        }}
+      >
+        {/* LEFT SIDE LOGIN CARD */}
+        <Paper
+          elevation={6}
           sx={{
-            marginTop: 8,
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
+            width: "100%",
+            maxWidth: 430,
+            p: 5,
+            borderRadius: 4,
+            background: "white",
           }}
         >
-          <Paper
-            elevation={10}
-            sx={{
-              padding: 4,
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              width: "100%",
-              borderRadius: 3,
-            }}
-          >
+          <Box textAlign="center">
             <Avatar
-              sx={{ m: 1, bgcolor: "primary.main", width: 60, height: 60 }}
+              sx={{
+                bgcolor: "primary.main",
+
+                margin: "auto",
+              }}
             >
-              <LockOutlinedIcon sx={{ fontSize: 30 }} />
+              <LockOutlinedIcon sx={{ fontSize: 36 }} />
             </Avatar>
 
-            <Typography
-              component="h1"
-              variant="h4"
-              sx={{ mb: 3, fontWeight: "bold" }}
-            >
+            <Box sx={{ textAlign: "center", mt: 4 }}>
+              <img
+                src={shribalajifinance}
+                alt="Balaji Finance"
+                style={{
+                  height: 100,
+                  width: "70%",
+                  margin: "0 auto", // centers horizontally
+                  display: "block", // required for margin auto to work
+                }}
+              />
+            </Box>
+
+            <Typography variant="h4" sx={{ mt: 2 }}>
               Sign In
             </Typography>
 
-            <Typography
-              variant="body1"
-              color="text.secondary"
-              sx={{ mb: 3, textAlign: "center" }}
-            >
-              Welcome back! Please sign in to your account.
+            <Typography color="text.secondary">
+              Welcome back! Please login to continue.
             </Typography>
+          </Box>
 
-            <Box
-              component="form"
-              onSubmit={handleSubmit}
-              sx={{ mt: 1, width: "100%" }}
+          {/* FORM */}
+          <Box component="form" onSubmit={handleSubmit} mt={3}>
+            <TextField
+              fullWidth
+              label="Username"
+              margin="normal"
+              value={formData.username}
+              onChange={handleChange("username")}
+              error={!!errors.username}
+              helperText={errors.username}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <AccountCircleIcon color="primary" />
+                  </InputAdornment>
+                ),
+              }}
+            />
+
+            <TextField
+              fullWidth
+              label="Password"
+              type={showPassword ? "text" : "password"}
+              margin="normal"
+              value={formData.password}
+              onChange={handleChange("password")}
+              error={!!errors.password}
+              helperText={errors.password}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <LockIcon color="primary" />
+                  </InputAdornment>
+                ),
+                endAdornment: (
+                  <IconButton onClick={() => setShowPassword(!showPassword)}>
+                    {showPassword ? <VisibilityOff /> : <Visibility />}
+                  </IconButton>
+                ),
+              }}
+            />
+
+            <Button
+              fullWidth
+              type="submit"
+              variant="contained"
+              sx={{ mt: 3, py: 1.3, fontWeight: 600 }}
+              disabled={loading}
+              startIcon={loading ? <CircularProgress size={20} /> : null}
             >
-              <TextField
-                margin="normal"
-                required
-                fullWidth
-                id="email"
-                label="Email Address"
-                name="email"
-                autoComplete="email"
-                autoFocus
-                value={formData.email}
-                onChange={handleChange("email")}
-                error={!!errors.email}
-                helperText={errors.email}
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <EmailIcon color="action" />
-                    </InputAdornment>
-                  ),
-                }}
-                sx={{ mb: 2 }}
-              />
+              {loading ? "Signing In..." : "Sign In"}
+            </Button>
+          </Box>
 
-              <TextField
-                margin="normal"
-                required
-                fullWidth
-                name="password"
-                label="Password"
-                type={showPassword ? "text" : "password"}
-                id="password"
-                autoComplete="current-password"
-                value={formData.password}
-                onChange={handleChange("password")}
-                error={!!errors.password}
-                helperText={errors.password}
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <LockIcon color="action" />
-                    </InputAdornment>
-                  ),
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <IconButton
-                        aria-label="toggle password visibility"
-                        onClick={handleClickShowPassword}
-                        onMouseDown={handleMouseDownPassword}
-                        edge="end"
-                      >
-                        {showPassword ? <VisibilityOff /> : <Visibility />}
-                      </IconButton>
-                    </InputAdornment>
-                  ),
-                }}
-                sx={{ mb: 3 }}
-              />
-
-              <Button
-                type="submit"
-                fullWidth
-                variant="contained"
-                sx={{
-                  mt: 3,
-                  mb: 2,
-                  py: 1.5,
-                  fontSize: "1.1rem",
-                  fontWeight: "bold",
-                  borderRadius: 2,
-                }}
-                disabled={loading}
-                startIcon={loading ? <CircularProgress size={20} /> : null}
-              >
-                {loading ? "Signing In..." : "Sign In"}
-              </Button>
-
-              <Grid container>
-                <Grid item xs>
-                  <Link
-                    href="#"
-                    variant="body2"
-                    sx={{ textDecoration: "none" }}
-                  >
-                    Forgot password?
-                  </Link>
-                </Grid>
-                <Grid item>
-                  <Link
-                    href="#"
-                    variant="body2"
-                    sx={{ textDecoration: "none" }}
-                  >
-                    {"Don't have an account? Sign Up"}
-                  </Link>
-                </Grid>
-              </Grid>
-            </Box>
-          </Paper>
-
-          <Typography
-            variant="body2"
-            color="text.secondary"
-            align="center"
-            sx={{ mt: 4 }}
-          >
-            {"Copyright © "}
-            <Link color="inherit" href="#" sx={{ textDecoration: "none" }}>
-              Balaji Finance
-            </Link>{" "}
-            {new Date().getFullYear()}
-            {"."}
+          <Typography textAlign="center" sx={{ mt: 3 }} color="text.secondary">
+            © {new Date().getFullYear()} Balaji Finance
           </Typography>
-        </Box>
-      </Container>
+        </Paper>
+      </Box>
     </ThemeProvider>
   );
 };

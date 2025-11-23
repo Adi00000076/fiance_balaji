@@ -8,6 +8,8 @@ export default defineConfig({
 
   plugins: [react()],
 
+  assetsInclude: ["**/*.png", "**/*.jpg", "**/*.jpeg", "**/*.svg"],
+
   server: {
     proxy: {
       "/balaji-finance": {

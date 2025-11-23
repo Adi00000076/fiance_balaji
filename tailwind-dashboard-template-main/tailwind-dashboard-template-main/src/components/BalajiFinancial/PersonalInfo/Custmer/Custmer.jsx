@@ -80,11 +80,24 @@ const Custmer = ({ personType = "CUSTOMER" }) => {
 
   const [errors, setErrors] = useState({});
 
+  // Helper to provide Authorization header from stored token
+  const getAuthHeaders = () => {
+    try {
+      const token =
+        typeof window !== "undefined" ? localStorage.getItem("token") : null;
+      return token ? { Authorization: `Bearer ${token}` } : {};
+    } catch (e) {
+      return {};
+    }
+  };
+
   /* FETCH DATA */
   const fetchData = async () => {
     setLoading(true);
     try {
-      const res = await axios.get(`${API_BASE}/PersonalInfo/findAll`);
+      const res = await axios.get(`${API_BASE}/PersonalInfo/findAll`, {
+        headers: getAuthHeaders(),
+      });
       console.log("Raw API Response:", res.data); // Debug log
 
       let data = Array.isArray(res.data) ? res.data : [];
@@ -93,7 +106,7 @@ const Custmer = ({ personType = "CUSTOMER" }) => {
       // Fix ID: use real ID or fallback safely
       const safeData = data.map((item, index) => ({
         ...item,
-        id: item.id || `BALAJI-${index}-${Date.now()}`, 
+        id: item.id || `BALAJI-${index}-${Date.now()}`,
         category: item.category || personType,
       }));
 
@@ -125,11 +138,14 @@ const Custmer = ({ personType = "CUSTOMER" }) => {
   const openAddForm = async () => {
     setLoading(true);
     try {
+      // Use creation template endpoint (GET) to get a new template/id
       const res = await axios.get(
-        `${API_BASE}/PersonalInfo/createNewPersonalInfoTemplate/${personType}`
+        `${API_BASE}/PersonalInfo/createNewPersonalInfoTemplate/${personType}`,
+        { headers: getAuthHeaders() }
       );
+
       setForm({
-        id: res.data.id || "",
+        id: res.data?.id || "",
         firstname: "",
         lastname: "",
         fathername: "",
@@ -198,10 +214,20 @@ const Custmer = ({ personType = "CUSTOMER" }) => {
     if (!validateForm()) return;
     setSaving(true);
     try {
-      await axios.post(`${API_BASE}/PersonalInfo/updatePersonalInfo`, {
-        ...form,
-        category: personType,
-      });
+      // Build payload and avoid sending empty id (backend may expect missing or null)
+      const payload = { ...form, category: personType };
+      if (!payload.id) delete payload.id;
+      // Ensure numeric fields are numbers
+      if (payload.age !== undefined && payload.age !== "") {
+        const n = Number(payload.age);
+        payload.age = Number.isNaN(n) ? payload.age : n;
+      }
+
+      await axios.post(
+        `${API_BASE}/PersonalInfo/updatePersonalInfo/${personType}`,
+        payload,
+        { headers: getAuthHeaders() }
+      );
       successToast(`${isEdit ? "Updated" : "Added"} successfully!`);
       setDrawerOpen(false);
       fetchData();
@@ -214,14 +240,22 @@ const Custmer = ({ personType = "CUSTOMER" }) => {
 
   /* DELETE */
   const handleDelete = async () => {
+    if (!toDeleteId) {
+      errorToast("Delete failed: missing id");
+      setDeleteDialogOpen(false);
+      return;
+    }
+
     try {
-      await axios.delete(`${API_BASE}/PersonalInfo/deletePersonalInfo`, {
-        data: { id: toDeleteId },
+      const idPayload = String(toDeleteId).trim();
+      await axios.get(`${API_BASE}/PersonalInfo/deletePersonalInfo`, {
+        data: { id: idPayload },
+        headers: getAuthHeaders(),
       });
       successToast("Deleted successfully");
       fetchData();
     } catch (err) {
-      errorToast("Delete failed");
+      errorToast(err.response?.data?.message || "Delete failed");
     } finally {
       setDeleteDialogOpen(false);
     }
@@ -231,6 +265,26 @@ const Custmer = ({ personType = "CUSTOMER" }) => {
   const copyId = () => {
     navigator.clipboard.writeText(form.id || "N/A");
     successToast("ID copied!");
+  };
+
+  /* OPEN EDIT FORM - fetch fresh record by id */
+  const openEditForm = async (id) => {
+    setLoading(true);
+    try {
+      const res = await axios.get(
+        `${API_BASE}/PersonalInfo/findPersonalInfoById/${id}`,
+        { headers: getAuthHeaders() }
+      );
+      const data = res.data || {};
+      setForm({ ...data, category: data.category || personType });
+      setIsEdit(true);
+      setDrawerOpen(true);
+    } catch (err) {
+      console.error("Failed to load record:", err);
+      errorToast("Failed to load record");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const columns = [
@@ -250,11 +304,7 @@ const Custmer = ({ personType = "CUSTOMER" }) => {
             variant="outlined"
             color="primary"
             startIcon={<FiEdit />}
-            onClick={() => {
-              setForm(params.row);
-              setIsEdit(true);
-              setDrawerOpen(true);
-            }}
+            onClick={() => openEditForm(params.row.id)}
           >
             Edit
           </Button>
@@ -266,7 +316,12 @@ const Custmer = ({ personType = "CUSTOMER" }) => {
             color="error"
             startIcon={<FiTrash2 />}
             onClick={() => {
-              setToDeleteId(params.row.id);
+              const idToDelete = params.row?.id;
+              if (!idToDelete) {
+                errorToast("Cannot delete: missing id");
+                return;
+              }
+              setToDeleteId(idToDelete);
               setDeleteDialogOpen(true);
             }}
           >
@@ -283,7 +338,7 @@ const Custmer = ({ personType = "CUSTOMER" }) => {
   ];
 
   return (
-    <Box sx={{ bgcolor: "#f9fafb", minHeight: "100vh",mt:2 }}>
+    <Box sx={{ bgcolor: "background.default", minHeight: "100vh", mt: 2 }}>
       {/* Header */}
       <Box
         sx={{
@@ -328,7 +383,7 @@ const Custmer = ({ personType = "CUSTOMER" }) => {
       </Box>
 
       {/* DataGrid */}
-      <Paper elevation={3} sx={{ height: 680 }}>
+      <Paper elevation={3} sx={{ height: 680, bgcolor: "background.paper" }}>
         <DataGrid
           rows={filteredRows}
           columns={columns}
@@ -337,6 +392,17 @@ const Custmer = ({ personType = "CUSTOMER" }) => {
           pageSizeOptions={[10, 25, 50, 100]}
           pagination
           disableRowSelectionOnClick
+          sx={{
+            height: "100%",
+            bgcolor: "background.paper",
+            color: "text.primary",
+            "& .MuiDataGrid-columnHeaders": {
+              bgcolor: "background.default",
+            },
+            "& .MuiDataGrid-virtualScroller": {
+              bgcolor: "background.paper",
+            },
+          }}
         />
       </Paper>
 
@@ -368,7 +434,7 @@ const Custmer = ({ personType = "CUSTOMER" }) => {
           {isEdit && (
             <Paper
               elevation={0}
-              sx={{ p: 2, bgcolor: "#f8f9fa", borderRadius: 2, mb: 4 }}
+              sx={{ p: 2, bgcolor: "background.paper", borderRadius: 2, mb: 4 }}
             >
               <TextField
                 fullWidth
