@@ -37,9 +37,7 @@ import {
 } from "react-icons/fi";
 import { MdClose } from "react-icons/md";
 import { successToast, errorToast } from "../../../../toastify";
-
-const API_BASE =
-  import.meta.env.VITE_API_BASE || "http://localhost:8881/balaji-finance";
+import { API_BASE } from "../../../../lib/config";
 
 const TYPE_LABELS = {
   CUSTOMER: "Customer",

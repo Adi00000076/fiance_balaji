@@ -25,15 +25,13 @@ import {
 } from "@mui/icons-material";
 
 import shribalajifinance from "../../images/shri-balaji-finance.png";
+import { API_BASE } from "../../lib/config";
 
 // FULL BACKGROUND IMAGE
 import leftSideImage from "../../images/left-bg.jpg";
 
 import { createTheme, ThemeProvider } from "@mui/material/styles";
 import { successToast, errorToast } from "../../toastify";
-
-const API_BASE =
-  import.meta.env.VITE_API_BASE || "http://localhost:8881/balaji-finance";
 
 const theme = createTheme({
   palette: {
@@ -75,34 +73,70 @@ const Login = () => {
     setLoading(true);
 
     try {
-      const resp = await fetch(`${API_BASE}/auth/login`, {
+      const url = `${API_BASE}/auth/login`;
+      const payload = { name: formData.username, password: formData.password };
+      console.debug("Login request:", url, payload);
+
+      const resp = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: formData.username,
-          password: formData.password,
-        }),
+        body: JSON.stringify(payload),
       });
 
-      const data = await resp.json();
+      // Handle JSON and non-JSON responses robustly
+      const contentType = resp.headers.get("content-type") || "";
+      let data;
+      if (contentType.includes("application/json")) {
+        data = await resp.json();
+      } else {
+        const text = await resp.text();
+        try {
+          data = JSON.parse(text);
+        } catch (e) {
+          data = { message: text };
+        }
+      }
 
-      if (resp.ok && (data.token || data.user)) {
-        const token = data.token || data.accessToken;
-        if (token) localStorage.setItem("token", token);
+      console.debug("Login response:", resp.status, data);
 
-        login({
-          name: data.name || data.user?.name || formData.username,
-          role: data.role || "user",
-          token,
-        });
-
-        successToast("Login Successful");
+      if (resp.ok && data.token) {
+        try {
+          localStorage.setItem("token", data.token);
+        } catch (e) {
+          console.warn("Could not save token:", e);
+        }
+        try {
+          localStorage.setItem("username", data.name || formData.username);
+        } catch (e) {}
+        // Build user object and pass to AuthContext so isAuthenticated becomes true
+        const userObj = {
+          name: data.name || formData.username,
+          token: data.token,
+          role: data.role || data.user?.role || "user",
+        };
+        login(userObj);
+        successToast(data.message || "Login Successful");
+        navigate("/", { replace: true });
+      } else if (resp.ok && data.user) {
+        // Some backends return `user` instead of token
+        try {
+          localStorage.setItem("username", data.user.name || formData.username);
+        } catch (e) {}
+        const userObj = {
+          name: data.user.name || formData.username,
+          token: data.user.token || data.accessToken || null,
+          role: data.user.role || "user",
+        };
+        login(userObj);
+        successToast(data.message || "Login Successful");
         navigate("/", { replace: true });
       } else {
-        errorToast(data.message || "Invalid credentials");
+        const msg = data?.message || `Login failed (${resp.status})`;
+        errorToast(msg);
       }
     } catch (error) {
-      errorToast("Login failed!");
+      console.error("Login error:", error);
+      errorToast(error?.message || "Login failed!");
     } finally {
       setLoading(false);
     }

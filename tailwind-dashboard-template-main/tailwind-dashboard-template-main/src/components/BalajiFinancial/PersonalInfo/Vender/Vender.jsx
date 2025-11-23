@@ -37,9 +37,7 @@ import {
 } from "react-icons/fi";
 import { MdClose } from "react-icons/md";
 import { successToast, errorToast } from "../../../../toastify";
-
-const API_BASE =
-  import.meta.env.VITE_API_BASE || "http://localhost:8881/balaji-finance";
+import { API_BASE } from "../../../../lib/config";
 
 const TYPE_LABELS = {
   CUSTOMER: "Customer",
@@ -341,8 +339,8 @@ const Vender = ({ personType = "VENDOR" }) => {
             height: "100%",
             bgcolor: "background.paper",
             color: "text.primary",
-            '& .MuiDataGrid-columnHeaders': { bgcolor: 'background.default' },
-            '& .MuiDataGrid-virtualScroller': { bgcolor: 'background.paper' },
+            "& .MuiDataGrid-columnHeaders": { bgcolor: "background.default" },
+            "& .MuiDataGrid-virtualScroller": { bgcolor: "background.paper" },
           }}
         />
       </Paper>

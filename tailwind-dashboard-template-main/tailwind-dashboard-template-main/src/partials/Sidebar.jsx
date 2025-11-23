@@ -110,14 +110,14 @@ function Sidebar({ sidebarOpen, setSidebarOpen, variant = "default" }) {
           </div>
 
           {/* Centered logo below heading */}
-          <div className="w-full mt-3 flex justify-center lg:hidden lg:sidebar-expanded:flex">
-            <div className="bg-white/90 dark:bg-gray-800/80 rounded-none p-3 flex items-center justify-center shadow-sm">
+          <div className="">
+            <div >
               <img
                 src={logoSrc}
                 alt="Shri Balaji Finance"
                 width={100}
-                height={100}
-                className="object-cover rounded-none"
+                height={80}
+                className="object-cover rounded-full"
               />
             </div>
           </div>
