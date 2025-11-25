@@ -7,6 +7,9 @@
 			<item value="boolean"/>
 		</list>
 		<list key="findhistory">
+			<item value="setIdproof"/>
+			<item value="idprooftype"/>
+			<item value="response = personalInfoService.updatePersonalInfoDto(personalInfoDto);"/>
 			<item value="bool"/>
 			<item value="Boolean"/>
 		</list>

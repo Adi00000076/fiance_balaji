@@ -1,5 +1,6 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
+import path from "path";
 
 export default defineConfig({
   define: {
@@ -7,6 +8,15 @@ export default defineConfig({
   },
 
   plugins: [react()],
+
+  resolve: {
+    alias: {
+      "@": path.resolve(__dirname, "src"),
+      toastify: path.resolve(__dirname, "src/toastify.js"),
+      lib: path.resolve(__dirname, "src/lib"),
+      // Add more aliases here if needed
+    },
+  },
 
   assetsInclude: ["**/*.png", "**/*.jpg", "**/*.jpeg", "**/*.svg"],
 

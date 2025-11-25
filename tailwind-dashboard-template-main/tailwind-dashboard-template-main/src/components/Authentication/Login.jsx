@@ -151,13 +151,14 @@ const Login = () => {
         sx={{
           height: "100vh",
           width: "100vw",
+
           background: `url(${leftSideImage})`,
           backgroundSize: "cover",
-          backgroundPosition: "center",
+          backgroundPosition: "start",
           display: "flex",
           alignItems: "center",
           justifyContent: "flex-end", // 👈 MOVE CARD RIGHT
-          pr: 2, // 👈 small padding on right
+        
         }}
       >
         {/* LEFT SIDE LOGIN CARD */}
@@ -165,7 +166,7 @@ const Login = () => {
           elevation={6}
           sx={{
             width: "100%",
-            maxWidth: 430,
+            maxWidth: 530,
             p: 5,
             borderRadius: 4,
             background: "white",

@@ -111,7 +111,7 @@ function Sidebar({ sidebarOpen, setSidebarOpen, variant = "default" }) {
 
           {/* Centered logo below heading */}
           <div className="">
-            <div >
+            <div>
               <img
                 src={logoSrc}
                 alt="Shri Balaji Finance"
@@ -272,93 +272,71 @@ function Sidebar({ sidebarOpen, setSidebarOpen, variant = "default" }) {
                               </span>
                             </NavLink>
                           </li>
-                          <li className="mb-1 last:mb-0">
-                            <NavLink
-                              to="/customer"
-                              className={({ isActive }) =>
-                                `flex items-center ${
-                                  isActive
-                                    ? "bg-teal-50 dark:bg-teal-900/30 text-teal-600"
-                                    : "text-gray-600 dark:text-gray-300"
-                                } hover:text-teal-600 transition duration-150 truncate py-1 rounded-none px-2 hover:bg-teal-50 dark:hover:bg-teal-900/30 focus:outline-none focus:ring-2 focus:ring-teal-400`
-                              }
-                            >
-                              <People className="w-4 h-4 mr-3 text-gray-500" />
-                              <span className="text-sm font-medium lg:opacity-0 lg:sidebar-expanded:opacity-100 2xl:opacity-100 duration-200">
-                                Customer
-                              </span>
-                            </NavLink>
-                          </li>
-                          <li className="mb-1 last:mb-0">
-                            <NavLink
-                              to="/employee"
-                              className={({ isActive }) =>
-                                `flex items-center ${
-                                  isActive
-                                    ? "bg-teal-50 dark:bg-teal-900/30 text-teal-600"
-                                    : "text-gray-600 dark:text-gray-300"
-                                } hover:text-teal-600 transition duration-150 truncate py-1 rounded-none px-2 hover:bg-teal-50 dark:hover:bg-teal-900/30 focus:outline-none focus:ring-2 focus:ring-teal-400`
-                              }
-                            >
-                              <Work className="w-4 h-4 mr-3 text-gray-500" />
-                              <span className="text-sm font-medium lg:opacity-0 lg:sidebar-expanded:opacity-100 2xl:opacity-100 duration-200">
-                                Employee
-                              </span>
-                            </NavLink>
-                          </li>
-                          <li className="mb-1 last:mb-0">
-                            <NavLink
-                              to="/partner"
-                              className={({ isActive }) =>
-                                `flex items-center ${
-                                  isActive
-                                    ? "bg-teal-50 dark:bg-teal-900/30 text-teal-600"
-                                    : "text-gray-600 dark:text-gray-300"
-                                } hover:text-teal-600 transition duration-150 truncate py-1 rounded-none px-2 hover:bg-teal-50 dark:hover:bg-teal-900/30 focus:outline-none focus:ring-2 focus:ring-teal-400`
-                              }
-                            >
-                              <Handshake className="w-4 h-4 mr-3 text-gray-500" />
-                              <span className="text-sm font-medium lg:opacity-0 lg:sidebar-expanded:opacity-100 2xl:opacity-100 duration-200">
-                                Partner
-                              </span>
-                            </NavLink>
-                          </li>
-                          <li className="mb-1 last:mb-0">
-                            <NavLink
-                              to="/vendor"
-                              className={({ isActive }) =>
-                                `flex items-center ${
-                                  isActive
-                                    ? "bg-teal-50 dark:bg-teal-900/30 text-teal-600"
-                                    : "text-gray-600 dark:text-gray-300"
-                                } hover:text-teal-600 transition duration-150 truncate py-1 rounded-none px-2 hover:bg-teal-50 dark:hover:bg-teal-900/30 focus:outline-none focus:ring-2 focus:ring-teal-400`
-                              }
-                            >
-                              <LocalShipping className="w-4 h-4 mr-3 text-gray-500" />
-                              <span className="text-sm font-medium lg:opacity-0 lg:sidebar-expanded:opacity-100 2xl:opacity-100 duration-200">
-                                Vendor
-                              </span>
-                            </NavLink>
-                          </li>
-                          <li className="mb-1 last:mb-0">
-                            <NavLink
-                              end
-                              to="#"
-                              className={({ isActive }) =>
-                                `text-sm font-medium ${
-                                  isActive
-                                    ? "bg-teal-50 dark:bg-teal-900/30 text-teal-600"
-                                    : "text-gray-600 dark:text-gray-300"
-                                } transition duration-150 truncate px-2 py-1 rounded-none hover:bg-teal-50 dark:hover:bg-teal-900/30 focus:outline-none focus:ring-2 focus:ring-teal-400`
-                              }
-                            >
-                              <span className="text-sm font-medium lg:opacity-0 lg:sidebar-expanded:opacity-100 2xl:opacity-100 duration-200">
-                                Account
-                              </span>
-                            </NavLink>
-                          </li>
-                        </ul>
 
+                          <li className="mb-1 last:mb-0">
+                            <NavLink
+                              to="/Loan"
+                              className={({ isActive }) =>
+                                `flex items-center ${
+                                  isActive
+                                    ? "bg-teal-50 dark:bg-teal-900/30 text-teal-600"
+                                    : "text-gray-600 dark:text-gray-300"
+                                } hover:text-teal-600 transition duration-150 truncate py-1 rounded-none px-2 hover:bg-teal-50 dark:hover:bg-teal-900/30 focus:outline-none focus:ring-2 focus:ring-teal-400`
+                              }
+                            >
+                              <Person className="w-4 h-4 mr-3 text-gray-500" />
+                              <span className="text-sm font-medium lg:opacity-0 lg:sidebar-expanded:opacity-100 2xl:opacity-100 duration-200">
+                        Loans
+                              </span>
+                            </NavLink>
+                          </li>
+
+
+                        </ul>
+                      </div>
+                    </React.Fragment>
+                  );
+                }}
+              </SidebarLinkGroup>
+              {/* Onboarding */}
+            </ul>
+
+            <ul className="mt-3">
+              {/* Authentication */}
+              <SidebarLinkGroup>
+                {(handleClick, open) => {
+                  return (
+                    <React.Fragment>
+                      <a
+                        href="#0"
+                        className={`group block text-gray-800 dark:text-gray-100 truncate transition duration-150 rounded-none px-2 py-2 ${
+                          open
+                            ? "bg-teal-50 dark:bg-teal-900/30 text-teal-600"
+                            : "hover:bg-teal-50 dark:hover:bg-teal-900/30"
+                        } focus:outline-none focus:ring-2 focus:ring-teal-400`}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          handleClick();
+                          setSidebarExpanded(true);
+                        }}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center">
+                            <Group className="w-5 h-5 shrink-0 text-gray-400 dark:text-gray-500" />
+                            <span className="text-sm font-medium ml-4 lg:opacity-0 lg:sidebar-expanded:opacity-100 2xl:opacity-100 duration-200">
+                              Login Info
+                            </span>
+                          </div>
+                          <div className="flex shrink-0 ml-2">
+                            <ExpandMore
+                              className={`w-3 h-3 shrink-0 ml-1 text-gray-400 dark:text-gray-500 transition-transform ${
+                                open && "rotate-180"
+                              }`}
+                            />
+                          </div>
+                        </div>
+                      </a>
+                      <div className="lg:hidden lg:sidebar-expanded:block 2xl:block">
                         <ul
                           className={`pl-8 mt-2 space-y-1 ${!open && "hidden"}`}
                         >
@@ -387,6 +365,8 @@ function Sidebar({ sidebarOpen, setSidebarOpen, variant = "default" }) {
               </SidebarLinkGroup>
               {/* Onboarding */}
             </ul>
+
+
           </div>
         </div>
 
